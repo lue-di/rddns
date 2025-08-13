@@ -10,6 +10,7 @@ app = FastAPI()
 with open('production.json') as f:
     Config = json.load(f)
     print("readConfig:",Config)
+    print("Version: V0.2.5")
 
 class aItem(BaseModel):
     ip: str
@@ -43,7 +44,7 @@ def changeIP(zone_id:str,record_id:str,email:str,api_key:str,bodyjson:dict):
 async def ipnew(item: aItem):
     if item.token != Config["token"]:
         return {"code": 2}
-    print("New IP change:",item.ip)
+    print("New IP Request:",item.ip)
     for i in Config["domains"]:
         resp=getCFDnsDetails(i["domain"],Config["zone_id"],Config["email"],Config["api_key"])
         if resp["content"] == item.ip:
