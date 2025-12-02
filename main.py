@@ -65,7 +65,7 @@ async def ipnew(item: aItem):
         })
         print("Detail:",resp)
         print("Result:", res)
-
+        print("IP change:", i["domain"])
         if (not res or not resp):
             return {"code": 0}
 
