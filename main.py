@@ -7,10 +7,8 @@ from requests  import get,put
 from requests.exceptions import RequestException
 app = FastAPI()
 
-with open('production.json') as f:
-    Config = json.load(f)
-    print("readConfig:",Config)
-    print("Version: V0.2.6")
+
+print("RDDNS Version: V0.2.7")
 
 class aItem(BaseModel):
     ip: str
@@ -47,6 +45,9 @@ def changeIP(zone_id:str,record_id:str,email:str,api_key:str,bodyjson:dict):
 
 @app.post("/ipnew")
 async def ipnew(item: aItem):
+    with open('production.json') as f:
+        Config = json.load(f)
+        print("UpdateConfig:", Config)
     if item.token != Config["token"]:
         return {"code": 2}
     print("New IP Request:",item.ip)
