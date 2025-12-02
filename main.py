@@ -10,7 +10,7 @@ app = FastAPI()
 with open('production.json') as f:
     Config = json.load(f)
     print("readConfig:",Config)
-    print("Version: V0.2.5")
+    print("Version: V0.2.6")
 
 class aItem(BaseModel):
     ip: str
@@ -23,10 +23,15 @@ def getCFDnsDetails(domain:str,zone_id:str,email:str,api_key:str):
                                       "X-Auth-Email":email,
                                       "X-Auth-Key":api_key,
                                   }) as result:
-            return [i for i in result.json()["result"] if i["name"]==domain][0]
+            records = [i for i in result.json()["result"] if i["name"]==domain]
+            if not records:
+                print(f"[WARN] DNS record not found for domain: {domain}")
+                return None
+
+            return records[0]
     except RequestException as e:
         print(e)
-        return False
+        return None
 def changeIP(zone_id:str,record_id:str,email:str,api_key:str,bodyjson:dict):
     try:
         with put("https://api.cloudflare.com/client/v4/zones/"+zone_id+"/dns_records/"+record_id,
