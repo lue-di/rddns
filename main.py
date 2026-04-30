@@ -8,7 +8,7 @@ from requests.exceptions import RequestException
 app = FastAPI()
 
 
-print("RDDNS Version: V0.2.7")
+print("RDDNS Version: V0.2.8")
 
 class aItem(BaseModel):
     ip: str
