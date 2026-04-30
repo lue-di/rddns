@@ -52,11 +52,14 @@ async def ipnew(item: aItem):
         return {"code": 2}
     print("New IP Request:",item.ip)
     for i in Config["domains"]:
-        resp=getCFDnsDetails(i["domain"],Config["zone_id"],Config["email"],Config["api_key"])
+        resp=getCFDnsDetails(i["domain"],i["zone_id"],Config["email"],Config["api_key"])
+        if not resp:
+            print("DNS record not found, skip:",i["domain"])
+            continue
         if resp["content"] == item.ip:
             print("IP not change:",i["domain"])
             continue
-        res=changeIP(Config["zone_id"],resp['id'],Config["email"],Config["api_key"],{
+        res=changeIP(i["zone_id"],resp['id'],Config["email"],Config["api_key"],{
             "type": resp["type"],
             "name": resp["name"],
             "ttl": resp["ttl"],

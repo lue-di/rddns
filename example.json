@@ -1,11 +1,11 @@
 {
   "token": "example",
-  "zone_id": "example",
   "email": "1234@gmail.com",
   "api_key": "example",
   "domains": [
     {
-      "domain": "abc.github.com"
+      "domain": "abc.github.com",
+      "zone_id": "example"
     }
   ]
 }
