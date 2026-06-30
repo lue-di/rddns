@@ -47,10 +47,3 @@ git push origin v0.3.0
 ```
 
 推送后 CI 基于新 tag 继续自动 bump。
-
-## 初始化（首次部署）
-
-```bash
-git push origin <initial-tag>
-git push
-```

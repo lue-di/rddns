@@ -35,7 +35,20 @@ jobs:
             echo "bump=patch" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Check if HEAD already tagged
+        id: check_tag
+        run: |
+          TAG=$(git tag --points-at HEAD 2>/dev/null | head -1)
+          if [ -n "$TAG" ]; then
+            echo "HEAD already has tag $TAG, skipping version bump"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "existing_tag=$TAG" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Calculate next version from latest tag
+        if: steps.check_tag.outputs.skip != 'true'
         id: version
         run: |
           # Get the latest tag, default to v0.0.0 if none
@@ -59,6 +72,7 @@ jobs:
           echo "new_tag=v$NEW_VER" >> "$GITHUB_OUTPUT"
 
       - name: Create and push tag
+        if: steps.check_tag.outputs.skip != 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -75,6 +89,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build and push Docker image
+        if: steps.check_tag.outputs.skip != 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
