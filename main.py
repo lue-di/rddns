@@ -8,7 +8,7 @@ from requests.exceptions import RequestException
 app = FastAPI()
 
 
-print("RDDNS Version: V0.2.9")
+print("RDDNS Version: V0.2.10")
 
 class aItem(BaseModel):
     ip: str
@@ -21,7 +21,11 @@ def getCFDnsDetails(domain:str,zone_id:str,email:str,api_key:str):
                                       "X-Auth-Email":email,
                                       "X-Auth-Key":api_key,
                                   }) as result:
-            records = [i for i in result.json()["result"] if i["name"]==domain]
+            data = result.json()
+            if not data.get("success") or data.get("result") is None:
+                print(f"[ERROR] Cloudflare API request failed (HTTP {result.status_code}): {data.get('errors')}")
+                return None
+            records = [i for i in data["result"] if i["name"]==domain]
             if not records:
                 print(f"[WARN] DNS record not found for domain: {domain}")
                 return None
@@ -37,7 +41,11 @@ def changeIP(zone_id:str,record_id:str,email:str,api_key:str,bodyjson:dict):
                      "X-Auth-Email":email,
                      "X-Auth-Key":api_key,
                  },json=bodyjson) as result:
-            return result.json()["result"]
+            data = result.json()
+            if not data.get("success"):
+                print(f"[ERROR] Cloudflare API update failed (HTTP {result.status_code}): {data.get('errors')}")
+                return False
+            return data["result"]
     except RequestException as e:
         print(e)
         return False
