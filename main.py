@@ -1,14 +1,33 @@
 # Author: luedi
 
 import json
+from pathlib import Path
 from fastapi import FastAPI
 from pydantic import BaseModel
-from requests  import get,put
+from requests import get, put
 from requests.exceptions import RequestException
+
 app = FastAPI()
 
-
-print("RDDNS Version: V0.2.10")
+# ── Read version from VERSION file ─────────────────────────────
+__version__ = "unknown"
+_version_path = Path(__file__).resolve().parent / "VERSION"
+if _version_path.exists():
+    __version__ = _version_path.read_text().strip()
+else:
+    # Fallback: get version from git tags (local development)
+    try:
+        import subprocess
+        _tag = subprocess.run(
+            ["git", "describe", "--tags", "--abbrev=0"],
+            capture_output=True, text=True, check=True,
+            cwd=Path(__file__).parent
+        ).stdout.strip().lstrip("v")
+        if _tag:
+            __version__ = _tag
+    except Exception:
+        pass
+print(f"RDDNS Version: V{__version__}")
 
 class aItem(BaseModel):
     ip: str

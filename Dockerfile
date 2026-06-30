@@ -1,10 +1,13 @@
 FROM python:3.12.6-slim
 LABEL maintainer="luedi <wallisluedi@gmail.com>"
 
+ARG VERSION=unknown
+
 WORKDIR /rddns
 COPY ./ /rddns/
 
-RUN pip install --no-cache-dir -r requirements.txt && \
+RUN echo "$VERSION" > /rddns/VERSION && \
+    pip install --no-cache-dir -r requirements.txt && \
     rm -rf /root/.cache/pip
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
