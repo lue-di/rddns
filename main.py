@@ -7,6 +7,10 @@ from pydantic import BaseModel
 from requests import get, put
 from requests.exceptions import RequestException
 
+from logger import setup_logging, get_logger
+
+logger = setup_logging()
+
 app = FastAPI()
 
 # ── Read version from VERSION file ─────────────────────────────
@@ -27,46 +31,64 @@ else:
             __version__ = _tag
     except Exception:
         pass
-print(f"RDDNS Version: V{__version__}")
+logger.info("RDDNS Version: V%s", __version__)
 
 class aItem(BaseModel):
     ip: str
     token: str
 
-def getCFDnsDetails(domain:str,zone_id:str,email:str,api_key:str):
+def getCFDnsDetails(domain: str, zone_id: str, email: str, api_key: str):
     try:
-        with get("https://api.cloudflare.com/client/v4/zones/"+zone_id+"/dns_records",
-                                  headers={
-                                      "X-Auth-Email":email,
-                                      "X-Auth-Key":api_key,
-                                  }) as result:
+        with get(
+            "https://api.cloudflare.com/client/v4/zones/" + zone_id + "/dns_records",
+            headers={
+                "X-Auth-Email": email,
+                "X-Auth-Key": api_key,
+            },
+        ) as result:
             data = result.json()
             if not data.get("success") or data.get("result") is None:
-                print(f"[ERROR] Cloudflare API request failed (HTTP {result.status_code}): {data.get('errors')}")
+                logger.error(
+                    "Cloudflare API request failed (HTTP %s): %s",
+                    result.status_code,
+                    data.get("errors"),
+                )
                 return None
-            records = [i for i in data["result"] if i["name"]==domain]
+            records = [i for i in data["result"] if i["name"] == domain]
             if not records:
-                print(f"[WARN] DNS record not found for domain: {domain}")
+                logger.warning("DNS record not found for domain: %s", domain)
                 return None
 
             return records[0]
     except RequestException as e:
-        print(e)
+        logger.error("Failed to query Cloudflare DNS for %s: %s", domain, e)
         return None
-def changeIP(zone_id:str,record_id:str,email:str,api_key:str,bodyjson:dict):
+
+
+def changeIP(zone_id: str, record_id: str, email: str, api_key: str, bodyjson: dict):
     try:
-        with put("https://api.cloudflare.com/client/v4/zones/"+zone_id+"/dns_records/"+record_id,
-                 headers={
-                     "X-Auth-Email":email,
-                     "X-Auth-Key":api_key,
-                 },json=bodyjson) as result:
+        with put(
+            "https://api.cloudflare.com/client/v4/zones/"
+            + zone_id
+            + "/dns_records/"
+            + record_id,
+            headers={
+                "X-Auth-Email": email,
+                "X-Auth-Key": api_key,
+            },
+            json=bodyjson,
+        ) as result:
             data = result.json()
             if not data.get("success"):
-                print(f"[ERROR] Cloudflare API update failed (HTTP {result.status_code}): {data.get('errors')}")
+                logger.error(
+                    "Cloudflare API update failed (HTTP %s): %s",
+                    result.status_code,
+                    data.get("errors"),
+                )
                 return False
             return data["result"]
     except RequestException as e:
-        print(e)
+        logger.error("Failed to update Cloudflare DNS record %s: %s", record_id, e)
         return False
 
 
@@ -74,30 +96,38 @@ def changeIP(zone_id:str,record_id:str,email:str,api_key:str,bodyjson:dict):
 async def ipnew(item: aItem):
     with open('production.json') as f:
         Config = json.load(f)
-        print("UpdateConfig:", Config)
+        logger.debug("UpdateConfig loaded with %d domain(s)", len(Config.get("domains", [])))
     if item.token != Config["token"]:
+        logger.warning("Token mismatch for IP request from %s", item.ip)
         return {"code": 2}
-    print("New IP Request:",item.ip)
+    logger.info("New IP request: %s", item.ip)
     for i in Config["domains"]:
-        resp=getCFDnsDetails(i["domain"],i["zone_id"],Config["email"],Config["api_key"])
+        resp = getCFDnsDetails(
+            i["domain"], i["zone_id"], Config["email"], Config["api_key"]
+        )
         if not resp:
-            print("DNS record not found, skip:",i["domain"])
+            logger.warning("DNS record not found, skip: %s", i["domain"])
             continue
         if resp["content"] == item.ip:
-            print("IP not change:",i["domain"])
+            logger.info("IP unchanged for %s (%s)", i["domain"], item.ip)
             continue
-        res=changeIP(i["zone_id"],resp['id'],Config["email"],Config["api_key"],{
-            "type": resp["type"],
-            "name": resp["name"],
-            "ttl": resp["ttl"],
-            "content": item.ip,
-            "proxied": resp["proxied"]
-        })
-        print("Detail:",resp)
-        print("Result:", res)
-        print("IP change:", i["domain"])
-        if (not res or not resp):
+        res = changeIP(
+            i["zone_id"],
+            resp["id"],
+            Config["email"],
+            Config["api_key"],
+            {
+                "type": resp["type"],
+                "name": resp["name"],
+                "ttl": resp["ttl"],
+                "content": item.ip,
+                "proxied": resp["proxied"],
+            },
+        )
+        logger.debug("Record detail for %s: %s", i["domain"], resp)
+        logger.debug("Update result for %s: %s", i["domain"], res)
+        logger.info("IP changed for %s", i["domain"])
+        if not res or not resp:
             return {"code": 0}
-
 
     return {"code": 1}

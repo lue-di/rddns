@@ -2,3 +2,4 @@
 /production.json
 /.idea/
 /VERSION
+__pycache__/
