@@ -2,9 +2,6 @@
   "host": "0.0.0.0",
   "port": 8080,
   "log_level": "INFO",
-  "token": "example",
-  "email": "1234@gmail.com",
-  "api_key": "example",
   "domains": [
     {
       "domain": "abc.github.com",

@@ -4,7 +4,16 @@ So your RouterOS has to call this project's api when ip changes.
 
 # Usage
 Configure your routeros's scheduler according to example.rsc .
-Then deploy this project to your server.
+
+Put only service settings and DNS domains in `production.json`; credentials must be supplied with environment variables:
+
+```bash
+export TOKEN="your-ddns-token"
+export EMAIL="your-cloudflare-email"
+export API_KEY="your-cloudflare-api-key"
+```
+
+Then deploy this project to your server. For Docker, pass the same values with `-e TOKEN=... -e EMAIL=... -e API_KEY=...`.
 You can use [docker](https://hub.docker.com/r/1uedi/rddns) to deploy this project.
 
 # issue

@@ -10,5 +10,5 @@ if __name__ == "__main__":
     setup_logging(level=config.get("log_level", "INFO"))
 
     host = config.get("host", "0.0.0.0")
-    port = config.get("port", 8080)
+    port = config.get("port", 8181)
     uvicorn.run("main:app", host=host, port=port)

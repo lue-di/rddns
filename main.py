@@ -1,8 +1,9 @@
 # Author: luedi
 
 import json
+import os
 from pathlib import Path
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from requests import get, put
 from requests.exceptions import RequestException
@@ -94,17 +95,30 @@ def changeIP(zone_id: str, record_id: str, email: str, api_key: str, bodyjson: d
 
 @app.post("/ipnew")
 async def ipnew(item: aItem):
-    with open('production.json') as f:
-        Config = json.load(f)
-        logger.debug("UpdateConfig loaded with %d domain(s)", len(Config.get("domains", [])))
-    if item.token != Config["token"]:
+    token = os.getenv("TOKEN")
+    email = os.getenv("EMAIL")
+    api_key = os.getenv("API_KEY")
+    missing_variables = [
+        name
+        for name, value in (("TOKEN", token), ("EMAIL", email), ("API_KEY", api_key))
+        if not value
+    ]
+    if missing_variables:
+        logger.error("Missing required environment variables: %s", ", ".join(missing_variables))
+        raise HTTPException(
+            status_code=500,
+            detail=f"Missing required environment variables: {', '.join(missing_variables)}",
+        )
+
+    with open("production.json") as f:
+        config = json.load(f)
+        logger.debug("UpdateConfig loaded with %d domain(s)", len(config.get("domains", [])))
+    if item.token != token:
         logger.warning("Token mismatch for IP request from %s", item.ip)
         return {"code": 2}
     logger.info("New IP request: %s", item.ip)
-    for i in Config["domains"]:
-        resp = getCFDnsDetails(
-            i["domain"], i["zone_id"], Config["email"], Config["api_key"]
-        )
+    for i in config["domains"]:
+        resp = getCFDnsDetails(i["domain"], i["zone_id"], email, api_key)
         if not resp:
             logger.warning("DNS record not found, skip: %s", i["domain"])
             continue
@@ -114,8 +128,8 @@ async def ipnew(item: aItem):
         res = changeIP(
             i["zone_id"],
             resp["id"],
-            Config["email"],
-            Config["api_key"],
+            email,
+            api_key,
             {
                 "type": resp["type"],
                 "name": resp["name"],
