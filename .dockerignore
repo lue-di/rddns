@@ -1,0 +1,18 @@
+.git
+.github
+.claude
+.idea
+.venv
+__pycache__
+*.py[cod]
+*.log
+
+# Runtime configuration and secrets are supplied externally.
+production.json
+
+# Development and documentation files are not needed by the image.
+AGENT.md
+README.md
+LICENSE
+example.json
+example.rsc

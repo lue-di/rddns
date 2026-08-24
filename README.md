@@ -13,7 +13,17 @@ export EMAIL="your-cloudflare-email"
 export API_KEY="your-cloudflare-api-key"
 ```
 
-Then deploy this project to your server. For Docker, pass the same values with `-e TOKEN=... -e EMAIL=... -e API_KEY=...`.
+Then deploy this project to your server. For Docker, mount `production.json` and pass the same values with `-e TOKEN=... -e EMAIL=... -e API_KEY=...`:
+
+```bash
+docker run -d --name rddns -p 8181:8181 \
+  -v "$(pwd)/production.json:/rddns/production.json:ro" \
+  -e TOKEN="your-ddns-token" \
+  -e EMAIL="your-cloudflare-email" \
+  -e API_KEY="your-cloudflare-api-key" \
+  1uedi/rddns
+```
+
 You can use [docker](https://hub.docker.com/r/1uedi/rddns) to deploy this project.
 
 # issue
